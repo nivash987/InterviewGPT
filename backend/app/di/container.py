@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from functools import lru_cache
 
 from fastapi import Depends
@@ -31,8 +32,8 @@ def get_sessionmaker_dep() -> async_sessionmaker:
 
 async def get_session_dep(
     sm: async_sessionmaker = Depends(get_sessionmaker_dep),
-) -> AsyncSession:
-    async for s in get_db_session(sm):
-        return s
-    raise RuntimeError("Failed to acquire DB session")
+) -> AsyncIterator[AsyncSession]:
+    """Yield session so commit runs after the request handler (FastAPI generator dep)."""
+    async for session in get_db_session(sm):
+        yield session
 
