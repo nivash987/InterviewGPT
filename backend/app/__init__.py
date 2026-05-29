@@ -1,0 +1,2 @@
+"""InterviewGPT FastAPI backend package."""
+

@@ -1,0 +1,8 @@
+from __future__ import annotations
+
+from abc import ABC
+
+
+class InterviewRepository(ABC):
+    """Interview persistence port."""
+
