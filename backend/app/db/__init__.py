@@ -1,2 +1,3 @@
-"""Database wiring and repository base types."""
+from __future__ import annotations
 
+from app.db import models  # noqa: F401 — register ORM models

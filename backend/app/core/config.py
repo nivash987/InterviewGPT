@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     access_token_expire_seconds: int = 900
+    refresh_token_expire_seconds: int = 60 * 60 * 24 * 7  # 7 days
+    email_verification_expire_seconds: int = 60 * 60 * 24  # 24 hours
+    password_reset_expire_seconds: int = 60 * 60  # 1 hour
+    require_email_verification: bool = True
 
     # Outbound calls
     public_base_url: AnyUrl | None = None
