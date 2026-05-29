@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
@@ -41,13 +43,19 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Study planner</CardTitle>
-            <CardDescription>Coming soon</CardDescription>
+            <CardTitle>Resumes</CardTitle>
+            <CardDescription>Upload and manage your CV</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Personalized study plans will surface here after backend integration.
+            <p className="text-sm text-muted-foreground mb-4">
+              Upload PDF or DOCX resumes with automatic parsing for skills, experience, and education.
             </p>
+            <Link
+              href="/resumes"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Manage resumes
+            </Link>
           </CardContent>
         </Card>
       </div>

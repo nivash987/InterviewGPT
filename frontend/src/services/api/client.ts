@@ -1,4 +1,5 @@
 import axios, {
+  AxiosHeaders,
   type AxiosError,
   type AxiosInstance,
   type InternalAxiosRequestConfig,
@@ -50,6 +51,19 @@ function getRefreshPromise(): Promise<string | null> {
   return refreshPromise;
 }
 
+function ensureAxiosHeaders(config: InternalAxiosRequestConfig): AxiosHeaders {
+  if (config.headers instanceof AxiosHeaders) {
+    return config.headers;
+  }
+  const headers = AxiosHeaders.from(config.headers ?? {});
+  config.headers = headers;
+  return headers;
+}
+
+function applyAccessToken(config: InternalAxiosRequestConfig, token: string): void {
+  ensureAxiosHeaders(config).set("Authorization", `Bearer ${token}`);
+}
+
 export function createApiClient(): AxiosInstance {
   const client = axios.create({
     baseURL: env.apiUrl,
@@ -63,8 +77,13 @@ export function createApiClient(): AxiosInstance {
   client.interceptors.request.use((config) => {
     const token = getAccessToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      applyAccessToken(config, token);
     }
+
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      ensureAxiosHeaders(config).delete("Content-Type");
+    }
+
     return config;
   });
 
@@ -86,7 +105,7 @@ export function createApiClient(): AxiosInstance {
         const newToken = await getRefreshPromise();
 
         if (newToken) {
-          original.headers.Authorization = `Bearer ${newToken}`;
+          applyAccessToken(original, newToken);
           return client.request(original);
         }
       }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { FileText, LayoutDashboard, LogOut } from "lucide-react";
 
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,11 @@ const navItems = [
     href: ROUTES.dashboard,
     label: "Overview",
     icon: LayoutDashboard,
+  },
+  {
+    href: ROUTES.resumes,
+    label: "Resumes",
+    icon: FileText,
   },
 ] as const;
 
@@ -41,7 +46,7 @@ export function DashboardSidebar({ onNavigate, className }: DashboardSidebarProp
 
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
             <Link
