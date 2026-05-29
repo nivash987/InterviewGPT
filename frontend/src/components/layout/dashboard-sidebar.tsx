@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutDashboard, LogOut } from "lucide-react";
+import { BarChart3, FileText, LayoutDashboard, LogOut } from "lucide-react";
 
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,11 @@ const navItems = [
     href: ROUTES.resumes,
     label: "Resumes",
     icon: FileText,
+  },
+  {
+    href: ROUTES.ats,
+    label: "ATS Analysis",
+    icon: BarChart3,
   },
 ] as const;
 

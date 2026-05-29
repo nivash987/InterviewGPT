@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.db.models.ats import AtsAnalysis, JobProfile, SkillTaxonomy
 from app.db.models.resume import Resume, ResumeVersion
 from app.db.models.user import (
     EmailVerificationToken,
@@ -13,7 +14,9 @@ from app.db.models.user import (
 )
 
 __all__ = [
+    "AtsAnalysis",
     "EmailVerificationToken",
+    "JobProfile",
     "PasswordResetToken",
     "Permission",
     "RefreshToken",
@@ -21,6 +24,7 @@ __all__ = [
     "ResumeVersion",
     "Role",
     "RolePermission",
+    "SkillTaxonomy",
     "User",
     "UserRole",
 ]

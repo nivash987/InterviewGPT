@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.modules.admin.api import router as admin_router
+from app.modules.ats.api import router as ats_router
 from app.modules.agents.api import router as agents_router
 from app.modules.analytics.api import router as analytics_router
 from app.modules.auth.api import router as auth_router
@@ -21,6 +22,7 @@ api_v1_router = APIRouter()
 api_v1_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_v1_router.include_router(users_router, prefix="/users", tags=["users"])
 api_v1_router.include_router(resume_router, prefix="/resumes", tags=["resumes"])
+api_v1_router.include_router(ats_router, prefix="/ats", tags=["ats"])
 api_v1_router.include_router(interview_router, prefix="/interview", tags=["interview"])
 api_v1_router.include_router(coding_router, prefix="/coding", tags=["coding"])
 api_v1_router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])

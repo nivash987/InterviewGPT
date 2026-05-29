@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function DashboardPage() {
@@ -51,10 +52,28 @@ export default function DashboardPage() {
               Upload PDF or DOCX resumes with automatic parsing for skills, experience, and education.
             </p>
             <Link
-              href="/resumes"
+              href={ROUTES.resumes}
               className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Manage resumes
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>ATS Analysis</CardTitle>
+            <CardDescription>Score and optimize your resume</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Run rule-based ATS scoring, skill gap analysis, and role recommendations on uploaded resumes.
+            </p>
+            <Link
+              href={ROUTES.ats}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Open ATS dashboard
             </Link>
           </CardContent>
         </Card>

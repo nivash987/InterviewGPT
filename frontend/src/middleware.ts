@@ -35,6 +35,8 @@ export const config = {
     "/dashboard/:path*",
     "/resumes",
     "/resumes/:path*",
+    "/ats",
+    "/ats/:path*",
     "/login",
     "/register",
   ],
