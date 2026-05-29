@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AnyUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 Environment = Literal["local", "dev", "staging", "prod", "test"]
 
@@ -13,7 +15,7 @@ Environment = Literal["local", "dev", "staging", "prod", "test"]
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP_",
-        env_file=(".env",),
+        env_file=(_BACKEND_ROOT / ".env",),
         env_file_encoding="utf-8",
         extra="ignore",
     )

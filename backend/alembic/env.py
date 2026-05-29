@@ -1,21 +1,30 @@
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Alembic Config object
+from app.core.config import settings
+
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set sqlalchemy.url from environment (foundation only)
-db_url = os.getenv("APP_DATABASE_URL", "")
-if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
+
+def get_database_url() -> str:
+    url = settings.database_url
+    if not url:
+        raise RuntimeError(
+            "APP_DATABASE_URL is not configured. Set it in backend/.env "
+            "(see .env.example)."
+        )
+    return url
+
+
+# Inject URL from app settings; escape % for ConfigParser.
+config.set_main_option("sqlalchemy.url", get_database_url().replace("%", "%%"))
 
 from app.db.base import Base
 from app.db import models  # noqa: F401 — register ORM models with metadata
@@ -24,7 +33,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -53,4 +62,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
