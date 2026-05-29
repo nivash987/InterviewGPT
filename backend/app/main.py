@@ -33,7 +33,10 @@ def create_app() -> FastAPI:
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
 
-    log.info("app_created", env=settings.env, debug=settings.debug)
+    log.info(
+    "app_created | env=%s | debug=%s",
+    settings.env,
+    settings.debug)
     return app
 
 
