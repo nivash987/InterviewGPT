@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.db.models.resume import Resume, ResumeVersion
 from app.db.models.user import (
     EmailVerificationToken,
     PasswordResetToken,
@@ -16,6 +17,8 @@ __all__ = [
     "PasswordResetToken",
     "Permission",
     "RefreshToken",
+    "Resume",
+    "ResumeVersion",
     "Role",
     "RolePermission",
     "User",

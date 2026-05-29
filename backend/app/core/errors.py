@@ -22,6 +22,11 @@ class AppError(Exception):
     meta: dict[str, Any] | None = None
 
 
+class BadRequestError(AppError):
+    def __init__(self, message: str = "Bad request", *, code: str = "bad_request") -> None:
+        super().__init__(code=code, message=message, http_status=status.HTTP_400_BAD_REQUEST)
+
+
 class NotFoundError(AppError):
     def __init__(self, message: str = "Not found", *, code: str = "not_found") -> None:
         super().__init__(code=code, message=message, http_status=status.HTTP_404_NOT_FOUND)
@@ -100,4 +105,3 @@ def install_exception_handlers(app: FastAPI, *, debug: bool) -> None:
             },
         )
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=body.model_dump(mode="json"))
-

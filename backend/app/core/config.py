@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     # Outbound calls
     public_base_url: AnyUrl | None = None
 
+    # Resume uploads
+    resume_upload_dir: str = "uploads/resumes"
+    resume_max_file_size_bytes: int = 5 * 1024 * 1024  # 5 MB
+
     @property
     def allowed_origins_list(self) -> list[str]:
         if not self.allowed_origins:

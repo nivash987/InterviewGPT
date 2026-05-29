@@ -20,7 +20,7 @@ api_v1_router = APIRouter()
 
 api_v1_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_v1_router.include_router(users_router, prefix="/users", tags=["users"])
-api_v1_router.include_router(resume_router, prefix="/resume", tags=["resume"])
+api_v1_router.include_router(resume_router, prefix="/resumes", tags=["resumes"])
 api_v1_router.include_router(interview_router, prefix="/interview", tags=["interview"])
 api_v1_router.include_router(coding_router, prefix="/coding", tags=["coding"])
 api_v1_router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
