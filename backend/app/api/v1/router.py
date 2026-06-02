@@ -6,9 +6,11 @@ from app.modules.admin.api import router as admin_router
 from app.modules.ats.api import router as ats_router
 from app.modules.agents.api import router as agents_router
 from app.modules.analytics.api import router as analytics_router
+from app.modules.career_coach.api import router as career_coach_router
 from app.modules.auth.api import router as auth_router
 from app.modules.coding.api import router as coding_router
 from app.modules.interview.api import router as interview_router
+from app.modules.jobs.api import router as jobs_router
 from app.modules.placement.api import router as placement_router
 from app.modules.rag.api import router as rag_router
 from app.modules.resume.api import router as resume_router
@@ -23,7 +25,9 @@ api_v1_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_v1_router.include_router(users_router, prefix="/users", tags=["users"])
 api_v1_router.include_router(resume_router, prefix="/resumes", tags=["resumes"])
 api_v1_router.include_router(ats_router, prefix="/ats", tags=["ats"])
-api_v1_router.include_router(interview_router, prefix="/interview", tags=["interview"])
+api_v1_router.include_router(interview_router, prefix="/interviews", tags=["interviews"])
+api_v1_router.include_router(jobs_router, prefix="/jobs", tags=["jobs"])
+api_v1_router.include_router(career_coach_router, prefix="/career-coach", tags=["career_coach"])
 api_v1_router.include_router(coding_router, prefix="/coding", tags=["coding"])
 api_v1_router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 api_v1_router.include_router(rag_router, prefix="/rag", tags=["rag"])

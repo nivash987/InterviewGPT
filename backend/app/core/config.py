@@ -53,6 +53,16 @@ class Settings(BaseSettings):
 
     # Outbound calls
     public_base_url: AnyUrl | None = None
+    frontend_url: AnyUrl | None = None
+
+    # SMTP / email delivery
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool = True
+    mail_from: str | None = None
+    mail_from_name: str = "InterviewGPT"
 
     # Resume uploads
     resume_upload_dir: str = "uploads/resumes"

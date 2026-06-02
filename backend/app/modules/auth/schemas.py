@@ -68,6 +68,15 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class DebugVerificationResponse(BaseModel):
+    user_id: str
+    email: str
+    is_email_verified: bool
+    verification_token_exists: bool
+    token_expires_at: datetime | None = None
+    verification_url: str | None = None
+
+
 class UserCredentials(BaseModel):
     id: str
     email: str

@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      router.push(ROUTES.login);
+      router.push(`${ROUTES.checkEmail}?email=${encodeURIComponent(credentials.email)}`);
       router.refresh();
     },
     [router],

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.api.deps import PrincipalDep
+from app.core.config import get_settings
 from app.core.responses import ApiResponse, EmptyData
 from app.core.security import Principal
 from app.modules.auth.deps import AuthServiceDep
 from app.modules.auth.schemas import (
+    DebugVerificationResponse,
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
@@ -81,6 +83,18 @@ async def resend_verification(
     svc: AuthService = AuthServiceDep,
 ) -> ApiResponse[MessageResponse]:
     result = await svc.resend_verification(email=body.email)
+    return ApiResponse(data=result)
+
+
+@router.get("/debug-verification/{email}", response_model=ApiResponse[DebugVerificationResponse])
+async def debug_verification(
+    email: str,
+    svc: AuthService = AuthServiceDep,
+) -> ApiResponse[DebugVerificationResponse]:
+    settings = get_settings()
+    if not settings.debug:
+        raise HTTPException(status_code=404, detail="Not found")
+    result = await svc.debug_verification(email=email)
     return ApiResponse(data=result)
 
 

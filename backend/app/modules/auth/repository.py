@@ -66,6 +66,12 @@ class AuthRepository(ABC):
     async def create_email_verification_token(self, *, user_id: str, expires_at: datetime) -> str: ...
 
     @abstractmethod
+    async def invalidate_email_verification_tokens(self, *, user_id: str) -> int: ...
+
+    @abstractmethod
+    async def get_active_email_verification_token(self, *, user_id: str) -> EmailVerificationToken | None: ...
+
+    @abstractmethod
     async def consume_email_verification_token(self, *, raw_token: str) -> str | None: ...
 
     @abstractmethod
@@ -200,6 +206,34 @@ class SqlAlchemyAuthRepository(AuthRepository):
         )
         self._session.add(token)
         return raw_token
+
+    async def invalidate_email_verification_tokens(self, *, user_id: str) -> int:
+        now = datetime.now(timezone.utc)
+        stmt = (
+            update(EmailVerificationToken)
+            .where(
+                EmailVerificationToken.user_id == uuid.UUID(user_id),
+                EmailVerificationToken.used_at.is_(None),
+            )
+            .values(used_at=now)
+        )
+        result = await self._session.execute(stmt)
+        return result.rowcount or 0
+
+    async def get_active_email_verification_token(self, *, user_id: str) -> EmailVerificationToken | None:
+        now = datetime.now(timezone.utc)
+        stmt = (
+            select(EmailVerificationToken)
+            .where(
+                EmailVerificationToken.user_id == uuid.UUID(user_id),
+                EmailVerificationToken.used_at.is_(None),
+                EmailVerificationToken.expires_at > now,
+            )
+            .order_by(EmailVerificationToken.created_at.desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def consume_email_verification_token(self, *, raw_token: str) -> str | None:
         token_hash = _hash_opaque_token(raw_token)

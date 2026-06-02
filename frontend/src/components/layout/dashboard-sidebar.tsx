@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, FileText, LayoutDashboard, LogOut } from "lucide-react";
+import {
+  BarChart3,
+  Briefcase,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+} from "lucide-react";
 
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
@@ -26,6 +34,21 @@ const navItems = [
     href: ROUTES.ats,
     label: "ATS Analysis",
     icon: BarChart3,
+  },
+  {
+    href: ROUTES.interviews,
+    label: "Mock Interviews",
+    icon: MessageSquare,
+  },
+  {
+    href: ROUTES.jobs,
+    label: "Job Tracker",
+    icon: Briefcase,
+  },
+  {
+    href: ROUTES.careerCoach,
+    label: "Career Coach",
+    icon: GraduationCap,
   },
 ] as const;
 

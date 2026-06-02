@@ -48,4 +48,22 @@ export const authService = {
     );
     assertApiSuccess(data);
   },
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const { data } = await apiClient.post<ApiResponse<{ message: string }>>(
+      "/auth/verify-email",
+      { token },
+    );
+    assertApiSuccess(data);
+    return data.data;
+  },
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const { data } = await apiClient.post<ApiResponse<{ message: string }>>(
+      "/auth/resend-verification",
+      { email },
+    );
+    assertApiSuccess(data);
+    return data.data;
+  },
 };

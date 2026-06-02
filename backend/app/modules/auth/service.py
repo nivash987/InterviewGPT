@@ -4,13 +4,15 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 
 from app.core.config import Settings
-from app.core.errors import ConflictError, ForbiddenError, UnauthorizedError
+from app.core.email import EmailSender, create_email_sender
+from app.core.errors import ConflictError, ForbiddenError, NotFoundError, UnauthorizedError
 from app.core.jwt import JWTService
 from app.core.logging import get_logger
 from app.core.password import hash_password, verify_password
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.schemas import (
     AuthUserResponse,
+    DebugVerificationResponse,
     MessageResponse,
     RegisterResponse,
     TokenPair,
@@ -46,6 +48,9 @@ class AuthService(ABC):
     async def resend_verification(self, *, email: str) -> MessageResponse: ...
 
     @abstractmethod
+    async def debug_verification(self, *, email: str) -> DebugVerificationResponse: ...
+
+    @abstractmethod
     async def forgot_password(self, *, email: str) -> MessageResponse: ...
 
     @abstractmethod
@@ -69,10 +74,12 @@ class AuthServiceImpl(AuthService):
         repository: AuthRepository,
         jwt_service: JWTService,
         settings: Settings,
+        email_sender: EmailSender | None = None,
     ) -> None:
         self._repository = repository
         self._jwt = jwt_service
         self._settings = settings
+        self._email_sender = email_sender or create_email_sender(settings)
 
     async def _issue_tokens(self, user: UserCredentials) -> TokenPair:
         access_token = self._jwt.create_access_token(
@@ -93,6 +100,54 @@ class AuthServiceImpl(AuthService):
         if self._settings.require_email_verification and user.email_verified_at is None:
             raise ForbiddenError("Email address is not verified", code="email_not_verified")
 
+    def _verification_link(self, token: str) -> str:
+        base = str(self._settings.frontend_url) if self._settings.frontend_url else "http://localhost:3000"
+        return f"{base.rstrip('/')}/verify-email?token={token}"
+
+    async def _create_and_send_verification_token(self, *, user: UserCredentials) -> str:
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=self._settings.email_verification_expire_seconds
+        )
+        invalidated = await self._repository.invalidate_email_verification_tokens(user_id=user.id)
+        if invalidated:
+            log.info(
+                "verification_tokens_invalidated",
+                extra={"user_id": user.id, "email": user.email, "count": invalidated},
+            )
+
+        verification_token = await self._repository.create_email_verification_token(
+            user_id=user.id,
+            expires_at=expires_at,
+        )
+        log.info(
+            "verification_token_created",
+            extra={
+                "user_id": user.id,
+                "email": user.email,
+                "expires_at": expires_at.isoformat(),
+            },
+        )
+
+        verification_link = self._verification_link(verification_token)
+        try:
+            await self._email_sender.send_verification_email(to=user.email, verification_link=verification_link)
+            log.info(
+                "verification_email_sent",
+                extra={"user_id": user.id, "email": user.email, "verification_link": verification_link},
+            )
+        except Exception as exc:
+            log.error(
+                "verification_email_send_failed",
+                extra={
+                    "user_id": user.id,
+                    "email": user.email,
+                    "verification_link": verification_link,
+                    "error": repr(exc),
+                },
+            )
+
+        return verification_token
+
     async def register(
         self,
         *,
@@ -110,25 +165,17 @@ class AuthServiceImpl(AuthService):
             full_name=full_name,
         )
 
-        verification_token: str | None = None
-        if self._settings.require_email_verification:
-            expires_at = datetime.now(timezone.utc) + timedelta(
-                seconds=self._settings.email_verification_expire_seconds
-            )
-            verification_token = await self._repository.create_email_verification_token(
-                user_id=user.id,
-                expires_at=expires_at,
-            )
-            self._log_verification_email(user.email, verification_token)
+        await self._repository.mark_email_verified(user_id=user.id)
+        user = await self._repository.get_user_by_id(user_id=user.id)
+        assert user is not None
+        log.info("user_auto_verified_on_register", extra={"user_id": user.id, "email": user.email})
 
-        tokens: TokenPair | None = None
-        if not self._settings.require_email_verification:
-            tokens = await self._issue_tokens(user)
+        tokens = await self._issue_tokens(user)
 
         return RegisterResponse(
             user=_auth_user(user),
             tokens=tokens,
-            verification_token=verification_token if self._settings.env in ("local", "dev", "test") else None,
+            verification_token=None,
         )
 
     async def login(self, *, email: str, password: str) -> TokenPair:
@@ -160,6 +207,7 @@ class AuthServiceImpl(AuthService):
             raise UnauthorizedError("User not found", code="invalid_token")
 
         self._ensure_active(user)
+        self._ensure_email_verified_if_required(user)
 
         await self._repository.revoke_refresh_token(jti=payload.jti)
         return await self._issue_tokens(user)
@@ -177,11 +225,14 @@ class AuthServiceImpl(AuthService):
         return MessageResponse(message="Logged out successfully")
 
     async def verify_email(self, *, token: str) -> MessageResponse:
+        log.info("verification_token_submitted")
         user_id = await self._repository.consume_email_verification_token(raw_token=token)
         if user_id is None:
+            log.warning("verification_token_invalid_or_expired")
             raise UnauthorizedError("Invalid or expired verification token", code="invalid_token")
 
         await self._repository.mark_email_verified(user_id=user_id)
+        log.info("user_email_verified", extra={"user_id": user_id})
         return MessageResponse(message="Email verified successfully")
 
     async def resend_verification(self, *, email: str) -> MessageResponse:
@@ -192,13 +243,34 @@ class AuthServiceImpl(AuthService):
         if user.email_verified_at is not None:
             return MessageResponse(message="If the account exists, a verification email has been sent")
 
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=self._settings.email_verification_expire_seconds)
-        verification_token = await self._repository.create_email_verification_token(
-            user_id=user.id,
-            expires_at=expires_at,
-        )
-        self._log_verification_email(user.email, verification_token)
+        await self._create_and_send_verification_token(user=user)
         return MessageResponse(message="If the account exists, a verification email has been sent")
+
+    async def debug_verification(self, *, email: str) -> DebugVerificationResponse:
+        user = await self._repository.get_user_by_email(email=email)
+        if user is None:
+            raise NotFoundError("User not found", code="user_not_found")
+
+        is_verified = user.email_verified_at is not None
+        active_token = await self._repository.get_active_email_verification_token(user_id=user.id)
+        verification_url: str | None = None
+        token_expires_at = active_token.expires_at if active_token else None
+
+        if not is_verified:
+            debug_token = await self._create_and_send_verification_token(user=user)
+            verification_url = self._verification_link(debug_token)
+            token_expires_at = datetime.now(timezone.utc) + timedelta(
+                seconds=self._settings.email_verification_expire_seconds
+            )
+
+        return DebugVerificationResponse(
+            user_id=user.id,
+            email=user.email,
+            is_email_verified=is_verified,
+            verification_token_exists=active_token is not None or verification_url is not None,
+            token_expires_at=token_expires_at,
+            verification_url=verification_url,
+        )
 
     async def forgot_password(self, *, email: str) -> MessageResponse:
         user = await self._repository.get_user_by_email(email=email)
@@ -217,18 +289,10 @@ class AuthServiceImpl(AuthService):
         await self._repository.revoke_all_refresh_tokens(user_id=user_id)
         return MessageResponse(message="Password reset successfully")
 
-    def _log_verification_email(self, email: str, token: str) -> None:
-        link = self._verification_link(token)
-        log.info("email_verification_sent", extra={"email": email, "verification_link": link, "token": token})
-
     def _log_password_reset_email(self, email: str, token: str) -> None:
         link = self._reset_link(token)
-        log.info("password_reset_sent", extra={"email": email, "reset_link": link, "token": token})
-
-    def _verification_link(self, token: str) -> str:
-        base = str(self._settings.public_base_url) if self._settings.public_base_url else "http://localhost:8000"
-        return f"{base}/api/auth/verify-email?token={token}"
+        log.info("password_reset_sent", extra={"email": email, "reset_link": link})
 
     def _reset_link(self, token: str) -> str:
-        base = str(self._settings.public_base_url) if self._settings.public_base_url else "http://localhost:8000"
-        return f"{base}/api/auth/reset-password?token={token}"
+        base = str(self._settings.frontend_url) if self._settings.frontend_url else "http://localhost:3000"
+        return f"{base.rstrip('/')}/reset-password?token={token}"
